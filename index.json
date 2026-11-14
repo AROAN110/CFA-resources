@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "updated": "2026-11-14",
+  "rootfs": [
+    {
+      "name": "alpine-rootfs-preinstalled.tar.gz",
+      "version": "3.24.2",
+      "arch": "aarch64",
+      "size": 6785879,
+      "sha256": "3a8a561e4accc4b638e80d8b1bb0973f8127d162c386be72922a4b562cfe761c",
+      "note": "预装 bash/coreutils/findutils/grep/sed/gawk/util-linux，解包即用"
+    }
+  ]
+}
