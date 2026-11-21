@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CFA IDE</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="topbar">
+  <span class="logo">CFA IDE</span>
+  <button id="btn-menu">&#9776;</button>
+</header>
+<div id="main">
+  <aside id="sidebar">
+    <div class="panel-head">FILES</div>
+    <div id="filetree" class="tree"></div>
+  </aside>
+  <section id="editor-area">
+    <div id="tabs"></div>
+    <div id="editor-wrap">
+      <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      <div id="empty-hint">open a file to start editing<br><small>CFA IDE</small></div>
+    </div>
+    <div id="termbar">
+      <button data-cmd="ls">ls</button>
+      <button data-cmd="pwd">pwd</button>
+      <button data-cmd="clear">clear</button>
+      <button data-cmd="python3">python3</button>
+      <button id="btn-run">&#9654; run</button>
+    </div>
+  </section>
+</div>
+<footer id="statusbar">
+  <span id="st-file">no file</span>
+  <span id="st-term">...</span>
+</footer>
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

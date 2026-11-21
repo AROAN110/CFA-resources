@@ -1,0 +1,15 @@
+{
+  "type": "resource",
+  "id": "com.cfa.ide",
+  "name": "CFA IDE",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "minAppVersion": "1.0.5",
+  "permissions": [
+    "fs:read",
+    "fs:write",
+    "fs:struct",
+    "terminal.read",
+    "terminal.write"
+  ]
+}
