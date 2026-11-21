@@ -25,24 +25,38 @@
       return { "&": "&" + "amp;", "<": "&" + "lt;", ">": "&" + "gt;", "\u0022": "&" + "quot;" }[c];
     });
   }
+  function base(p) { return p.split("/").pop(); }
+  function tabOf(p) { return openTabs.find(function (x) { return x.path === p; }); }
+
+  // ---------- 文件树 ----------
   function listDir(path, el, indent) {
+    el.innerHTML = '<div class="node dim">loading...</div>';
     CFA.request("fs.list", { path: path }).then(function (d) {
       var items = (d.items || []).sort(function (a, b) {
         if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
         return a.name < b.name ? -1 : 1;
       });
       el.innerHTML = "";
-      if (!items.length) { el.innerHTML = '<div class="node" style="color:#555">(empty)</div>'; return; }
+      if (!items.length) { el.innerHTML = '<div class="node dim">(empty)</div>'; return; }
       items.forEach(function (it) {
         var div = document.createElement("div");
-        div.className = "node " + (it.type === "dir" ? "dir" : "file");
+        div.className = "node " + it.type;
         div.style.paddingLeft = (12 + indent * 14) + "px";
         div.textContent = (it.type === "dir" ? "\u{1F4C1} " : "\u{1F4C4} ") + it.name;
-        div.onclick = function () { it.type === "dir" ? toggleDir(it.path, div, indent) : openFile(it.path); };
+        var timer = null, held = false;
+        div.addEventListener("touchstart", function () {
+          held = false;
+          timer = setTimeout(function () { held = true; fileMenu(it); }, 600);
+        });
+        div.addEventListener("touchend", function () { clearTimeout(timer); });
+        div.onclick = function () {
+          if (held) { held = false; return; }
+          it.type === "dir" ? toggleDir(it.path, div, indent) : openFile(it.path);
+        };
         el.appendChild(div);
       });
     }, function (e) {
-      el.innerHTML = '<div class="node" style="color:#f14c4c">error: ' + esc(e.code || "?") + "</div>";
+      el.innerHTML = '<div class="node err">error: ' + esc(e.code || "?") + "</div>";
     });
   }
   function toggleDir(path, nodeDiv, indent) {
@@ -57,21 +71,45 @@
     listDir(path, box, indent + 1);
   }
   function refreshTree() { listDir(".", $("filetree"), 0); }
+
+  // 长按菜单：重命名 / 删除
+  function fileMenu(it) {
+    var op = prompt(base(it.path) + "\n1=rename  2=delete  (cancel=none)");
+    if (op === "1") {
+      var nn = prompt("new name:", base(it.path));
+      if (!nn || nn === base(it.path)) return;
+      var np = it.path.slice(0, it.path.length - base(it.path).length) + nn;
+      CFA.request("fs.write", { path: np, content: "" }).then(function () {
+        CFA.request("fs.delete", { path: it.path }).then(function () {
+          if (tabOf(it.path)) closeTab(it.path);
+          refreshTree();
+          show("renamed");
+        });
+      }, function (e) { show("rename failed: " + (e.code || "?")); });
+    } else if (op === "2") {
+      if (!confirm("delete " + base(it.path) + "?")) return;
+      CFA.request("fs.delete", { path: it.path }).then(function () {
+        if (tabOf(it.path)) closeTab(it.path);
+        refreshTree();
+        show("deleted");
+      }, function (e) { show("delete failed: " + (e.code || "?")); });
+    }
+  }
+
+  // ---------- 多标签 ----------
   function openFile(path) {
-    var t = openTabs.find(function (x) { return x.path === path; });
-    if (t) return activate(path);
+    if (tabOf(path)) return activate(path);
     CFA.request("fs.read", { path: path }).then(function (d) {
       openTabs.push({ path: path, content: d.content, dirty: false });
       activate(path);
-    }, function (e) { show("open failed: " + (e.code || "?")); });
+    }, function (e) { show("open failed: " + (e.code || "?") + (e.message ? " " + e.message : "")); });
   }
   function activate(path) {
     activePath = path;
     renderTabs();
-    var t = openTabs.find(function (x) { return x.path === path; });
-    $("editor").value = t.content;
+    $("editor").value = tabOf(path).content;
     $("empty-hint").style.display = "none";
-    $("st-file").textContent = path + (t.dirty ? " \u25CF" : "");
+    $("st-file").textContent = path + (tabOf(path).dirty ? " \u25CF" : "");
   }
   function renderTabs() {
     var bar = $("tabs");
@@ -79,20 +117,44 @@
     openTabs.forEach(function (t) {
       var div = document.createElement("div");
       div.className = "tab" + (t.path === activePath ? " active" : "");
-      div.textContent = t.path.split("/").pop() + (t.dirty ? " \u25CF" : "");
+      div.textContent = base(t.path) + (t.dirty ? " \u25CF" : "");
       div.onclick = function () { activate(t.path); };
+      var x = document.createElement("span");
+      x.className = "x";
+      x.textContent = "\u00D7";
+      x.onclick = function (ev) { ev.stopPropagation(); closeTab(t.path); };
+      div.appendChild(x);
       bar.appendChild(div);
     });
   }
+  function closeTab(path) {
+    var t = tabOf(path);
+    if (t && t.dirty && !confirm(base(path) + " has unsaved changes, close anyway?")) return;
+    var i = openTabs.indexOf(t);
+    openTabs.splice(i, 1);
+    if (activePath === path) {
+      activePath = openTabs.length ? openTabs[Math.max(0, i - 1)].path : null;
+      if (activePath) activate(activePath);
+      else {
+        $("editor").value = "";
+        $("empty-hint").style.display = "flex";
+        $("st-file").textContent = "no file";
+        renderTabs();
+      }
+    } else renderTabs();
+  }
+
+  // ---------- 保存 / 新建 / 运行 ----------
   function saveActive() {
     if (!activePath) return show("no file");
-    var t = openTabs.find(function (x) { return x.path === activePath; });
+    var t = tabOf(activePath);
     CFA.request("fs.write", { path: t.path, content: $("editor").value }).then(function () {
+      t.content = $("editor").value;
       t.dirty = false;
       renderTabs();
       $("st-file").textContent = t.path;
       show("saved");
-    }, function (e) { show("save failed: " + (e.code || "?")); });
+    }, function (e) { show("save failed: " + (e.code || "?") + (e.message ? " " + e.message : "")); });
   }
   function newFile() {
     var name = prompt("new file name:");
@@ -121,19 +183,21 @@
       $("st-term").textContent = d.running ? "terminal: running" : "terminal: stopped";
     }, function () { $("st-term").textContent = "terminal: ?"; });
   }
+
+  // ---------- 接线 ----------
   waitBridge(function () {
     refreshTree();
     refreshStatus();
     $("editor").addEventListener("input", function () {
-      var t = openTabs.find(function (x) { return x.path === activePath; });
-      if (t && !t.dirty) { t.dirty = true; renderTabs(); }
+      var t = tabOf(activePath);
+      if (t && !t.dirty) { t.dirty = true; renderTabs(); $("st-file").textContent = t.path + " \u25CF"; }
     });
     document.querySelectorAll("#termbar button[data-cmd]").forEach(function (b) {
       b.onclick = function () { sendCmd(b.dataset.cmd); };
     });
     $("btn-run").onclick = runActive;
     $("btn-menu").onclick = function () {
-      var op = prompt("1=save  2=new file  3=refresh");
+      var op = prompt("1=save  2=new file  3=refresh tree");
       if (op === "1") saveActive();
       else if (op === "2") newFile();
       else if (op === "3") refreshTree();

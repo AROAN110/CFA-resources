@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated": "2026-11-14",
+  "updated": "2026-11-21",
   "rootfs": [
     {
       "name": "alpine-rootfs-preinstalled.tar.gz",
@@ -9,6 +9,17 @@
       "size": 6785879,
       "sha256": "3a8a561e4accc4b638e80d8b1bb0973f8127d162c386be72922a4b562cfe761c",
       "note": "预装 bash/coreutils/findutils/grep/sed/gawk/util-linux，解包即用"
+    }
+  ],
+  "resources": [
+    {
+      "name": "default.zip",
+      "id": "com.cfa.ide",
+      "default": true,
+      "version": "1.0.0",
+      "size": 4530,
+      "sha256": "e59fd720b126d64b2038dc15e4ed48afa81960635aa9d20206224e3450268e57",
+      "note": "Official IDE resource package (Acode-style: file tree / tabs / terminal bar / status bar)"
     }
   ]
 }

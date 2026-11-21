@@ -9,7 +9,7 @@ This repository is the default download source the app uses on first launch. It 
 | File | Purpose |
 |------|---------|
 | `index.json` | Repository index; the app reads this first to find the current rootfs |
-| `alpine-minirootfs-*`.tar.gz` | The container image referenced by the index |
+| `alpine-rootfs-preinstalled.tar.gz` | The container image referenced by the index |
 
 ## index.json format
 
@@ -19,11 +19,11 @@ This repository is the default download source the app uses on first launch. It 
   "updated": "2026-11-14",
   "rootfs": [
     {
-      "name": "alpine-minirootfs-3.24.2-a1rch64.tar.gz",
+      "name": "alpine-rootfs-preinstalled.tar.gz",
       "version": "3.24.2",
       "arch": "aarch64",
-      "size": 4028030,
-      "sha256": "9bf70a7f..."
+      "size": 6785879,
+      "sha256": "3a8a561e4accc4b638e80d8b1bb0973f8127d162c386be72922a4b562cfe761c"
     }
   ]
 }
@@ -40,8 +40,8 @@ The **first entry** of the `rootfs` array is treated as the current release. To 
 
 ## Current contents
 
-- Alpine minirootfs 3.24.2, aarch64, 4,028,030 bytes, 515 entries
-- SHA-256: `9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773`
+- Alpine rootfs 3.24.2 (preinstalled: bash/coreutils/findutils/grep/sed/gawk/util-linux), aarch64, 6,785,879 bytes
+- SHA-256: `3a8a561e4accc4b638e80d8b1bb0973f8127d162c386be72922a4b562cfe761c`
 
 ## Note on availability
 
